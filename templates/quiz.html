@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Quiz — Question {{ idx + 1 }}{% endblock %}
+
+{% block content %}
+<div class="quiz-card p-0 overflow-hidden fade-in">
+
+  <!-- ── Top bar ────────────────────────────────────────────────────────── -->
+  <div class="d-flex align-items-center justify-content-between px-4 py-3"
+       style="border-bottom:1px solid var(--border); background:var(--surface-2);">
+
+    <!-- Category + difficulty badge -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="fw-700" style="font-size:1rem;">
+        {{ category_icons.get(q.category, '📚') }} {{ q.category }}
+      </span>
+      <span class="badge
+        {% if q.difficulty == 'easy' %}bg-success
+        {% elif q.difficulty == 'medium' %}bg-warning text-dark
+        {% else %}bg-danger{% endif %}">
+        {{ diff_meta.label_hi if lang == 'hi' else diff_meta.label }}
+      </span>
+    </div>
+
+    <!-- Score pill -->
+    <span class="badge bg-dark border border-secondary px-3 py-2">
+      <i class="bi bi-star-fill text-warning me-1"></i>
+      {{ score }} / {{ idx }}
+    </span>
+  </div>
+
+  <!-- ── Progress bar ───────────────────────────────────────────────────── -->
+  <div class="quiz-progress mx-4 my-3">
+    <div class="quiz-progress-bar"
+         style="width: {{ ((idx) / total * 100)|round|int }}%"></div>
+  </div>
+
+  <div class="px-4 pb-4">
+
+    <!-- ── Header row: question # + timer ────────────────────────────────── -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <p class="text-muted small mb-0">
+        {% if lang == 'hi' %}प्रश्न{% else %}Question{% endif %}
+        <strong class="text-white">{{ idx + 1 }}</strong> / {{ total }}
+      </p>
+
+      <!-- Circular timer -->
+      <div class="timer-ring-wrap" data-seconds="{{ timer_seconds }}">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="timer-ring-bg" cx="32" cy="32" r="26"/>
+          <circle class="timer-ring-fg" cx="32" cy="32" r="26"/>
+        </svg>
+        <div class="timer-text" id="timer-text">{{ timer_seconds }}</div>
+      </div>
+    </div>
+
+    <!-- ── Question text ──────────────────────────────────────────────────── -->
+    <div class="mb-4">
+      <h4 class="fw-700 lh-base" style="font-size:1.15rem;">
+        {{ question_text }}
+      </h4>
+    </div>
+
+    <!-- ── Options ────────────────────────────────────────────────────────── -->
+    <div class="d-flex flex-column gap-3" id="options-list">
+      {% set labels = ['A','B','C','D','E','F'] %}
+      {% for orig_idx, opt_text in display_options %}
+      <button class="option-btn" type="button" data-index="{{ orig_idx }}">
+        <span class="opt-letter">{{ labels[loop.index0] }}</span>
+        {{ opt_text }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- ── Feedback banner ────────────────────────────────────────────────── -->
+    <div class="feedback-banner" id="feedback-banner"></div>
+
+    <!-- ── Next button (hidden until answered) ───────────────────────────── -->
+    <div class="text-end mt-4">
+      <a href="#" id="next-btn" class="btn-start text-decoration-none"
+         style="display:none; padding:0.65rem 1.8rem; font-size:0.95rem;">
+        <span id="next-btn-text">
+          {% if lang == 'hi' %}अगला प्रश्न{% else %}Next Question{% endif %}
+        </span>
+        <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Question Navigator ──────────────────────────────────────────────── -->
+  <div class="px-4 pb-4 pt-2" style="border-top:1px solid var(--border);">
+    <p class="small text-muted mb-2">
+      <i class="bi bi-grid-3x3-gap me-1"></i>
+      {% if lang == 'hi' %}प्रश्न नेविगेटर{% else %}Question Navigator{% endif %}
+    </p>
+    <div class="nav-dots">
+      {% for a in answers %}
+        <div class="nav-dot {{ 'answered-correct' if a.is_correct else 'answered-wrong' }}"
+             title="Q{{ loop.index }}: {{ '✓' if a.is_correct else '✗' }}">
+          {{ loop.index }}
+        </div>
+      {% endfor %}
+      <!-- Current -->
+      <div class="nav-dot current" title="Q{{ idx + 1 }}: Current">{{ idx + 1 }}</div>
+      <!-- Upcoming -->
+      {% for i in range(idx + 2, total + 1) %}
+        <div class="nav-dot" title="Q{{ i }}: Upcoming">{{ i }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Quit button -->
+<div class="text-center mt-3">
+  <a href="{{ url_for('index') }}"
+     class="btn btn-sm btn-outline-secondary"
+     onclick="return confirm('Quit the quiz? Progress will be lost.')">
+    <i class="bi bi-x-circle me-1"></i>
+    {% if lang == 'hi' %}क्विज़ छोड़ें{% else %}Quit Quiz{% endif %}
+  </a>
+</div>
+{% endblock %}

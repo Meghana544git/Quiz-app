@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}QuizMaster Pro — Home{% endblock %}
+
+{% block content %}
+<!-- ── Hero ────────────────────────────────────────────────────────────── -->
+<div class="hero-banner fade-in mb-4">
+  <h1 class="fw-800 mb-1" style="font-size:2rem;">
+    {% if lang == 'hi' %}क्विज़मास्टर प्रो 🧠{% else %}QuizMaster Pro 🧠{% endif %}
+  </h1>
+  <p class="text-muted mb-0">
+    {% if lang == 'hi' %}
+      श्रेणी चुनें, कठिनाई सेट करें, और अपनी बुद्धि को परखें!
+    {% else %}
+      Choose a category, set difficulty, and challenge your knowledge!
+    {% endif %}
+  </p>
+  <div class="d-flex justify-content-center gap-3 flex-wrap mt-3">
+    <span class="badge rounded-pill bg-dark border border-secondary px-3 py-2">
+      <i class="bi bi-collection me-1"></i>
+      {{ categories|length }} {% if lang == 'hi' %}श्रेणियाँ{% else %}Categories{% endif %}
+    </span>
+    <span class="badge rounded-pill bg-dark border border-secondary px-3 py-2">
+      <i class="bi bi-question-circle me-1"></i>
+      {{ 37 }} {% if lang == 'hi' %}प्रश्न{% else %}Questions{% endif %}
+    </span>
+    <span class="badge rounded-pill bg-dark border border-secondary px-3 py-2">
+      <i class="bi bi-trophy me-1"></i>
+      {% if lang == 'hi' %}3 कठिनाई स्तर{% else %}3 Difficulty Levels{% endif %}
+    </span>
+  </div>
+</div>
+
+<!-- ── Quiz Setup Form ─────────────────────────────────────────────────── -->
+<form action="{{ url_for('start') }}" method="POST" id="quiz-form">
+  <input type="hidden" name="category"   id="selected-category"   value="" />
+  <input type="hidden" name="difficulty" id="selected-difficulty" value="" />
+
+  <!-- STEP 1 ─ Category -->
+  <div class="qm-card p-4 mb-3 fade-in" style="animation-delay:0.05s">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <h5 class="fw-700 mb-0">
+        <span class="me-2 text-accent">01</span>
+        {% if lang == 'hi' %}श्रेणी चुनें{% else %}Choose a Category{% endif %}
+      </h5>
+      <!-- Search -->
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" id="category-search" class="search-bar"
+               placeholder="{% if lang == 'hi' %}खोजें…{% else %}Search…{% endif %}"
+               value="{{ search }}" autocomplete="off" />
+      </div>
+    </div>
+
+    <div id="cat-error" class="alert alert-danger py-2 small mb-3"
+         style="display:none;">
+      {% if lang == 'hi' %}कृपया एक श्रेणी चुनें।{% else %}Please select a category.{% endif %}
+    </div>
+
+    <!-- "All" card -->
+    <div class="row g-3 mb-2">
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="qm-card category-card text-center p-3 h-100"
+             data-category="all">
+          <span class="cat-icon">🎯</span>
+          <div class="cat-label">{% if lang == 'hi' %}सभी{% else %}All{% endif %}</div>
+          <span class="cat-count-badge">37 Qs</span>
+        </div>
+      </div>
+      {% for cat in categories %}
+      {% set qcount = namespace(n=0) %}
+      {% for _ in range(37) %}{% endfor %}{# placeholder; actual counts shown below #}
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="qm-card category-card text-center p-3 h-100"
+             data-category="{{ cat }}">
+          <span class="cat-icon">{{ category_icons.get(cat, '📚') }}</span>
+          <div class="cat-label">{{ cat }}</div>
+          <span class="cat-count-badge">
+            {% if cat == 'Science' %}6 Qs
+            {% elif cat == 'History' %}5 Qs
+            {% elif cat == 'Geography' %}5 Qs
+            {% elif cat == 'Technology' %}6 Qs
+            {% elif cat == 'Mathematics' %}6 Qs
+            {% elif cat == 'General Knowledge' %}5 Qs
+            {% elif cat == 'Sports' %}4 Qs
+            {% else %}Qs{% endif %}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- STEP 2 ─ Difficulty -->
+  <div class="qm-card p-4 mb-3 fade-in" style="animation-delay:0.1s">
+    <h5 class="fw-700 mb-3">
+      <span class="me-2 text-accent">02</span>
+      {% if lang == 'hi' %}कठिनाई स्तर{% else %}Select Difficulty{% endif %}
+    </h5>
+    <div class="d-flex flex-wrap gap-3">
+      <!-- All -->
+      <button type="button" class="diff-btn btn btn-outline-secondary"
+              data-difficulty="all">
+        🎯 {% if lang == 'hi' %}सभी{% else %}All{% endif %}
+      </button>
+      {% for diff in difficulties %}
+      {% set info = difficulty_info[diff] %}
+      <button type="button"
+              class="diff-btn btn btn-outline-{{ info.color }}"
+              data-difficulty="{{ diff }}">
+        {% if diff == 'easy' %}🟢
+        {% elif diff == 'medium' %}🟡
+        {% else %}🔴{% endif %}
+        {{ info.label_hi if lang == 'hi' else info.label }}
+        <small class="opacity-75">({{ info.time }}s)</small>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- STEP 3 ─ Start -->
+  <div class="text-center fade-in" style="animation-delay:0.15s">
+    <button type="submit" id="start-btn" class="btn-start" disabled>
+      <i class="bi bi-play-circle-fill me-2"></i>
+      {% if lang == 'hi' %}क्विज़ शुरू करें{% else %}Start Quiz{% endif %}
+    </button>
+    <p class="text-muted small mt-2">
+      {% if lang == 'hi' %}श्रेणी और कठिनाई दोनों चुनें{% else %}Select both a category and difficulty to begin{% endif %}
+    </p>
+  </div>
+</form>
+
+<!-- ── History ────────────────────────────────────────────────────────── -->
+{% if history %}
+<div class="qm-card p-4 mt-5 fade-in" id="history" style="animation-delay:0.2s">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="fw-700 mb-0">
+      <i class="bi bi-clock-history me-2 text-accent"></i>
+      {% if lang == 'hi' %}पिछले नतीजे{% else %}Quiz History{% endif %}
+    </h5>
+    <form method="POST" action="{{ url_for('clear_history') }}"
+          onsubmit="return confirm('Clear all history?')">
+      <button type="submit" class="btn btn-sm btn-outline-danger">
+        <i class="bi bi-trash3"></i>
+        <span class="d-none d-sm-inline ms-1">Clear</span>
+      </button>
+    </form>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-dark table-hover history-table mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>{% if lang == 'hi' %}श्रेणी{% else %}Category{% endif %}</th>
+          <th>{% if lang == 'hi' %}कठिनाई{% else %}Difficulty{% endif %}</th>
+          <th>{% if lang == 'hi' %}अंक{% else %}Score{% endif %}</th>
+          <th>%</th>
+          <th>{% if lang == 'hi' %}समय{% else %}When{% endif %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in history %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td>{{ category_icons.get(h.category, '🎯') }} {{ h.category|title }}</td>
+          <td>
+            {% set diff = h.difficulty %}
+            {% if diff == 'easy' %}
+              <span class="badge bg-success">Easy</span>
+            {% elif diff == 'medium' %}
+              <span class="badge bg-warning text-dark">Medium</span>
+            {% elif diff == 'hard' %}
+              <span class="badge bg-danger">Hard</span>
+            {% else %}
+              <span class="badge bg-secondary">All</span>
+            {% endif %}
+          </td>
+          <td><strong>{{ h.score }}/{{ h.total }}</strong></td>
+          <td>
+            {% set pct = h.pct %}
+            <span class="
+              {% if pct >= 80 %}text-success
+              {% elif pct >= 60 %}text-primary
+              {% elif pct >= 40 %}text-warning
+              {% else %}text-danger{% endif %} fw-600">
+              {{ pct }}%
+            </span>
+          </td>
+          <td class="text-muted" style="font-size:0.78rem;">{{ h.timestamp }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
